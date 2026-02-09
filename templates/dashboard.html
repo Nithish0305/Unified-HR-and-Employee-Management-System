@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+    <h2>Welcome {{ username }}</h2>
+    <h3>Your role: {{ role }}</h3>
+
+    {% if role == "admin" %}
+        <p>You have admin privileges.</p>
+    {% elif role == "manager" %}
+        <p>You can manage projects.</p>
+    {% elif role == "employee" %}
+        <p>You can view assigned tasks.</p>
+    {% endif %}
+</body>
+</html>
