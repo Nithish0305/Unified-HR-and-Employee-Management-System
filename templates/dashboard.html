@@ -7,12 +7,322 @@
     <h2>Welcome {{ username }}</h2>
     <h3>Your role: {{ role }}</h3>
 
-    {% if role == "admin" %}
+    {% set user_role = role.lower() %}
+
+    {% if user_role == "admin" %}
         <p>You have admin privileges.</p>
-    {% elif role == "manager" %}
+    {% elif user_role == "manager" %}
         <p>You can manage projects.</p>
-    {% elif role == "employee" %}
+    {% elif user_role == "employee" %}
         <p>You can view assigned tasks.</p>
+    {% endif %}
+
+    {% if user_role == "employee" and employee_data %}
+        <hr>
+        <h3>Your Personal Dashboard</h3>
+        
+        <!-- Employee Information -->
+        <section style="margin-bottom: 30px; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #007bff;">
+            <h4>Employee Information</h4>
+            <table border="0" style="width: 50%;">
+                <tr><td><strong>Employee ID:</strong></td><td>{{ employee_data.employee.employee_id }}</td></tr>
+                <tr><td><strong>Full Name:</strong></td><td>{{ employee_data.employee.name }}</td></tr>
+                <tr><td><strong>Email:</strong></td><td>{{ employee_data.employee.email }}</td></tr>
+                <tr><td><strong>Position:</strong></td><td>{{ employee_data.employee.role }}</td></tr>
+                <tr><td><strong>Department:</strong></td><td>{{ employee_data.employee.department }}</td></tr>
+                <tr><td><strong>Current Salary:</strong></td><td>${{ "{:,.2f}".format(employee_data.employee.salary or 0) }}</td></tr>
+            </table>
+        </section>
+
+        <!-- Leaves Summary -->
+        <section style="margin-bottom: 30px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107;">
+            <h4>📅 Leaves</h4>
+            <div style="display: flex; gap: 20px; margin-bottom: 15px;">
+                <div><strong>Approved:</strong> {{ employee_data.summary.total_leaves_approved }}</div>
+                <div><strong>Pending:</strong> {{ employee_data.summary.total_leaves_pending }}</div>
+                <div><strong>Rejected:</strong> {{ employee_data.summary.total_leaves_rejected }}</div>
+            </div>
+
+            {% if employee_data.leaves %}
+                <div style="margin-bottom: 10px;">
+                    {% if employee_data.leaves.approved %}
+                    <details style="margin-bottom: 10px;">
+                        <summary style="cursor: pointer; padding: 8px; background-color: #d4edda; border-radius: 4px;"><strong>Approved ({{ employee_data.leaves.approved|length }})</strong></summary>
+                        <table border="1" style="width: 100%; margin-top: 10px;">
+                            <tr><th>Leave Type</th><th>Start Date</th><th>End Date</th><th>Reason</th></tr>
+                            {% for leave in employee_data.leaves.approved %}
+                            <tr>
+                                <td>{{ leave.leave_type }}</td>
+                                <td>{{ leave.start_date }}</td>
+                                <td>{{ leave.end_date }}</td>
+                                <td>{{ leave.reason }}</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </details>
+                    {% endif %}
+
+                    {% if employee_data.leaves.pending %}
+                    <details style="margin-bottom: 10px;">
+                        <summary style="cursor: pointer; padding: 8px; background-color: #fff3cd; border-radius: 4px;"><strong>Pending ({{ employee_data.leaves.pending|length }})</strong></summary>
+                        <table border="1" style="width: 100%; margin-top: 10px;">
+                            <tr><th>Leave Type</th><th>Start Date</th><th>End Date</th><th>Reason</th><th>Status</th></tr>
+                            {% for leave in employee_data.leaves.pending %}
+                            <tr>
+                                <td>{{ leave.leave_type }}</td>
+                                <td>{{ leave.start_date }}</td>
+                                <td>{{ leave.end_date }}</td>
+                                <td>{{ leave.reason }}</td>
+                                <td><span style="color: #ff9800;">Pending Approval</span></td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </details>
+                    {% endif %}
+
+                    {% if employee_data.leaves.rejected %}
+                    <details style="margin-bottom: 10px;">
+                        <summary style="cursor: pointer; padding: 8px; background-color: #f8d7da; border-radius: 4px;"><strong>Rejected ({{ employee_data.leaves.rejected|length }})</strong></summary>
+                        <table border="1" style="width: 100%; margin-top: 10px;">
+                            <tr><th>Leave Type</th><th>Start Date</th><th>End Date</th><th>Reason</th></tr>
+                            {% for leave in employee_data.leaves.rejected %}
+                            <tr>
+                                <td>{{ leave.leave_type }}</td>
+                                <td>{{ leave.start_date }}</td>
+                                <td>{{ leave.end_date }}</td>
+                                <td>{{ leave.reason }}</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </details>
+                    {% endif %}
+                </div>
+            {% else %}
+            <p><em>No leave requests found.</em></p>
+            {% endif %}
+        </section>
+
+        <!-- Salary Increments -->
+        <section style="margin-bottom: 30px; padding: 15px; background-color: #d1ecf1; border-left: 4px solid #17a2b8;">
+            <h4>Salary Increments</h4>
+            <div style="display: flex; gap: 20px; margin-bottom: 15px;">
+                <div><strong>Approved:</strong> {{ employee_data.summary.total_salary_requests }}</div>
+                <div><strong>Pending:</strong> 0</div>
+                <div><strong>Rejected:</strong> 0</div>
+            </div>
+
+            {% if employee_data.salary_increments %}
+                {% if employee_data.salary_increments.approved %}
+                <details style="margin-bottom: 10px;">
+                    <summary style="cursor: pointer; padding: 8px; background-color: #d4edda; border-radius: 4px;"><strong>Approved ({{ employee_data.salary_increments.approved|length }})</strong></summary>
+                    <table border="1" style="width: 100%; margin-top: 10px;">
+                        <tr><th>From</th><th>To</th><th>Increment Amount</th><th>Effective Date</th></tr>
+                        {% for salary in employee_data.salary_increments.approved %}
+                        <tr>
+                            <td>${{ "{:,.2f}".format(salary.current_salary or 0) }}</td>
+                            <td>${{ "{:,.2f}".format(salary.proposed_salary or 0) }}</td>
+                            <td>${{ "{:,.2f}".format((salary.proposed_salary or 0) - (salary.current_salary or 0)) }}</td>
+                            <td>{{ salary.effective_date }}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </details>
+                {% endif %}
+
+                {% if employee_data.salary_increments.pending %}
+                <details style="margin-bottom: 10px;">
+                    <summary style="cursor: pointer; padding: 8px; background-color: #fff3cd; border-radius: 4px;"><strong>Pending ({{ employee_data.salary_increments.pending|length }})</strong></summary>
+                    <table border="1" style="width: 100%; margin-top: 10px;">
+                        <tr><th>From</th><th>To</th><th>Increment Amount</th><th>Status</th></tr>
+                        {% for salary in employee_data.salary_increments.pending %}
+                        <tr>
+                            <td>${{ "{:,.2f}".format(salary.current_salary or 0) }}</td>
+                            <td>${{ "{:,.2f}".format(salary.proposed_salary or 0) }}</td>
+                            <td>${{ "{:,.2f}".format((salary.proposed_salary or 0) - (salary.current_salary or 0)) }}</td>
+                            <td><span style="color: #ff9800;">Pending Approval</span></td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </details>
+                {% endif %}
+
+                {% if employee_data.salary_increments.rejected %}
+                <details style="margin-bottom: 10px;">
+                    <summary style="cursor: pointer; padding: 8px; background-color: #f8d7da; border-radius: 4px;"><strong>Rejected ({{ employee_data.salary_increments.rejected|length }})</strong></summary>
+                    <table border="1" style="width: 100%; margin-top: 10px;">
+                        <tr><th>From</th><th>To</th><th>Increment Amount</th><th>Reason</th></tr>
+                        {% for salary in employee_data.salary_increments.rejected %}
+                        <tr>
+                            <td>${{ "{:,.2f}".format(salary.current_salary or 0) }}</td>
+                            <td>${{ "{:,.2f}".format(salary.proposed_salary or 0) }}</td>
+                            <td>${{ "{:,.2f}".format((salary.proposed_salary or 0) - (salary.current_salary or 0)) }}</td>
+                            <td>{{ salary.reason or "N/A" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </details>
+                {% endif %}
+            {% else %}
+            <p><em>No salary increments found.</em></p>
+            {% endif %}
+        </section>
+
+        <!-- Promotions -->
+        <section style="margin-bottom: 30px; padding: 15px; background-color: #e7d4f5; border-left: 4px solid #9c27b0;">
+            <h4>Promotions</h4>
+            <div style="display: flex; gap: 20px; margin-bottom: 15px;">
+                <div><strong>Approved:</strong> {{ employee_data.summary.total_promotions }}</div>
+                <div><strong>Pending:</strong> 0</div>
+                <div><strong>Rejected:</strong> 0</div>
+            </div>
+
+            {% if employee_data.promotions %}
+                {% if employee_data.promotions.approved %}
+                <details style="margin-bottom: 10px;">
+                    <summary style="cursor: pointer; padding: 8px; background-color: #d4edda; border-radius: 4px;"><strong>Approved ({{ employee_data.promotions.approved|length }})</strong></summary>
+                    <table border="1" style="width: 100%; margin-top: 10px;">
+                        <tr><th>Current Role</th><th>Promoted To</th><th>Effective Date</th></tr>
+                        {% for promotion in employee_data.promotions.approved %}
+                        <tr>
+                            <td>{{ employee_data.employee.role }}</td>
+                            <td><strong>{{ promotion.new_role }}</strong></td>
+                            <td>{{ promotion.effective_date }}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </details>
+                {% endif %}
+
+                {% if employee_data.promotions.pending %}
+                <details style="margin-bottom: 10px;">
+                    <summary style="cursor: pointer; padding: 8px; background-color: #fff3cd; border-radius: 4px;"><strong>Pending ({{ employee_data.promotions.pending|length }})</strong></summary>
+                    <table border="1" style="width: 100%; margin-top: 10px;">
+                        <tr><th>Current Role</th><th>Proposed Role</th><th>Status</th></tr>
+                        {% for promotion in employee_data.promotions.pending %}
+                        <tr>
+                            <td>{{ employee_data.employee.role }}</td>
+                            <td>{{ promotion.new_role }}</td>
+                            <td><span style="color: #ff9800;">Pending Approval</span></td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </details>
+                {% endif %}
+
+                {% if employee_data.promotions.rejected %}
+                <details style="margin-bottom: 10px;">
+                    <summary style="cursor: pointer; padding: 8px; background-color: #f8d7da; border-radius: 4px;"><strong>Rejected ({{ employee_data.promotions.rejected|length }})</strong></summary>
+                    <table border="1" style="width: 100%; margin-top: 10px;">
+                        <tr><th>Current Role</th><th>Proposed Role</th><th>Reason</th></tr>
+                        {% for promotion in employee_data.promotions.rejected %}
+                        <tr>
+                            <td>{{ employee_data.employee.role }}</td>
+                            <td>{{ promotion.new_role }}</td>
+                            <td>{{ promotion.reason or "N/A" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </details>
+                {% endif %}
+            {% else %}
+            <p><em>No promotions found.</em></p>
+            {% endif %}
+        </section>
+
+        <!-- Meetings -->
+        <section style="margin-bottom: 30px; padding: 15px; background-color: #f0f4c3; border-left: 4px solid #8bc34a;">
+            <h4>Meetings</h4>
+            <div style="display: flex; gap: 20px; margin-bottom: 15px;">
+                <div><strong>Scheduled:</strong> {{ employee_data.summary.scheduled_meetings }}</div>
+                <div><strong>Completed:</strong> {{ employee_data.summary.completed_meetings }}</div>
+            </div>
+
+            {% if employee_data.meetings %}
+                {% if employee_data.meetings.scheduled %}
+                <details style="margin-bottom: 10px; open;">
+                    <summary style="cursor: pointer; padding: 8px; background-color: #bae6fd; border-radius: 4px;"><strong>Scheduled ({{ employee_data.meetings.scheduled|length }})</strong></summary>
+                    <table border="1" style="width: 100%; margin-top: 10px;">
+                        <tr><th>Title</th><th>Date</th><th>Start Time</th><th>End Time</th><th>Description</th></tr>
+                        {% for meeting in employee_data.meetings.scheduled %}
+                        <tr>
+                            <td>{{ meeting.title }}</td>
+                            <td>{{ meeting.date }}</td>
+                            <td>{{ meeting.start_time }}</td>
+                            <td>{{ meeting.end_time }}</td>
+                            <td>{{ meeting.description or "N/A" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </details>
+                {% endif %}
+
+                {% if employee_data.meetings.completed %}
+                <details style="margin-bottom: 10px;">
+                    <summary style="cursor: pointer; padding: 8px; background-color: #d4edda; border-radius: 4px;"><strong>Completed ({{ employee_data.meetings.completed|length }})</strong></summary>
+                    <table border="1" style="width: 100%; margin-top: 10px;">
+                        <tr><th>Title</th><th>Date</th><th>Start Time</th><th>End Time</th><th>Notes</th></tr>
+                        {% for meeting in employee_data.meetings.completed %}
+                        <tr>
+                            <td>{{ meeting.title }}</td>
+                            <td>{{ meeting.date }}</td>
+                            <td>{{ meeting.start_time }}</td>
+                            <td>{{ meeting.end_time }}</td>
+                            <td>{{ meeting.description or "N/A" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </details>
+                {% endif %}
+            {% else %}
+            <p><em>No meetings scheduled.</em></p>
+            {% endif %}
+        </section>
+
+        <hr>
+    {% endif %}
+
+    {% if user_role in ["admin", "hr"] %}
+        <hr>
+        <h3>Pending Leave Approvals</h3>
+        <form method="get" action="/leave/pending-approvals">
+            <label for="employee_id">Filter by Employee ID:</label>
+            <input type="text" name="employee_id" id="employee_id">
+            <button type="submit">Search</button>
+        </form>
+        <div id="pending-leaves">
+            <!-- This section will be filled by server or AJAX -->
+            {% if pending_leaves %}
+            <table border="1">
+                <tr>
+                    <th>Leave ID</th><th>Employee ID</th><th>Type</th><th>Dates</th><th>Reason</th><th>Actions</th>
+                </tr>
+                {% for leave in pending_leaves %}
+                <tr>
+                    <td>{{ leave.leave_id }}</td>
+                    <td>{{ leave.employee_id }}</td>
+                    <td>{{ leave.leave_type }}</td>
+                    <td>{{ leave.start_date }} to {{ leave.end_date }}</td>
+                    <td>{{ leave.reason }}</td>
+                    <td>
+                        <form method="post" action="/leave/pending-approvals">
+                            <input type="hidden" name="leave_id" value="{{ leave.leave_id }}">
+                            <input type="hidden" name="action" value="approve">
+                            <button type="submit">Approve</button>
+                        </form>
+                        <form method="post" action="/leave/pending-approvals">
+                            <input type="hidden" name="leave_id" value="{{ leave.leave_id }}">
+                            <input type="hidden" name="action" value="reject">
+                            <input type="text" name="reason" placeholder="Reason for rejection" required>
+                            <button type="submit">Reject</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% else %}
+            <p>No pending leave requests.</p>
+            {% endif %}
+        </div>
     {% endif %}
 </body>
 </html>
